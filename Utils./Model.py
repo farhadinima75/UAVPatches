@@ -1,4 +1,4 @@
-import torch, torch.nn as nn, torch.nn.functional as F
+import torch, torch.nn as nn
 class HardNet(nn.Module):
     """HardNet model definition
     """
