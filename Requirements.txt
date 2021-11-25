@@ -2,3 +2,4 @@ extract_patches==0.1.31
 opencv-python==4.5.1.48
 opencv-contrib-python==4.5.1.48
 kornia==0.6.1
+pydegensac==0.1.2
