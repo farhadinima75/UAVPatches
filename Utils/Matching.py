@@ -1,6 +1,6 @@
 # Based on https://github.com/ducha-aiki/local_feature_tutorial repo with some modification.
 
-__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'RootSIFT', 'HardNetDesc', 'SNNMatcher',
+__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'SIFT', 'HardNetDesc', 'SNNMatcher',
            'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier', 'UAVPatchesANDPlus']
 
 import cv2
@@ -70,15 +70,13 @@ class GeometricVerifier():
         return F, mask
 
 # Cell
-class RootSIFT(LocalFeatureExtractor):
+class SIFT(LocalFeatureExtractor):
     def __init__(self, **kwargs):
         self.desc = cv2.SIFT_create(40000)
         '''In'''
         return
     def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
         kps, descs  = self.desc.compute(image, keypoints)
-        # descs /= descs.sum(axis=1, keepdims=True) + 1e-8
-        # descs = np.sqrt(descs)
         return kps, descs
 
 # Cell
@@ -126,7 +124,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         from extract_patches.core import extract_patches
         # model = KF.HardNet(True).eval()
         model = self.Model
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 64, 50.0)
+        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 12.0)
 
         import torch
         # dev = torch.device('cpu')
