@@ -37,6 +37,67 @@ import cv2
 import copy
 import PIL
 
+def match_snn(
+    desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    
+    if len(desc1.shape) != 2:
+        raise AssertionError
+    if len(desc2.shape) != 2:
+        raise AssertionError
+    if desc2.shape[0] < 2:
+        raise AssertionError
+
+    if dm is None:
+        dm = torch.cdist(desc1, desc2)
+    else:
+        if not ((dm.size(0) == desc1.size(0)) and (dm.size(1) == desc2.size(0))):
+            raise AssertionError
+
+    vals, idxs_in_2 = torch.topk(dm, 2, dim=1, largest=False)
+    del dm
+    gc.collect()
+    ratio = vals[:, 0] / vals[:, 1]
+    mask = ratio <= th
+    match_dists = ratio[mask]
+    idxs_in1 = torch.arange(0, idxs_in_2.size(0), device=desc1.device)[mask]
+    idxs_in_2 = idxs_in_2[:, 0][mask]
+    matches_idxs = torch.cat([idxs_in1.view(-1, 1), idxs_in_2.view(-1, 1)], dim=1)
+    return match_dists.view(-1, 1), matches_idxs.view(-1, 2)
+
+def match_smnn(
+    desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    
+    if len(desc1.shape) != 2:
+        raise AssertionError
+    if len(desc2.shape) != 2:
+        raise AssertionError
+    if desc1.shape[0] < 2:
+        raise AssertionError
+    if desc2.shape[0] < 2:
+        raise AssertionError
+    
+    dists1, idx1 = match_snn(desc1, desc2, th)
+    gc.collect()
+    dists2, idx2 = match_snn(desc2, desc1, th)
+
+    if len(dists2) > 0 and len(dists1) > 0:
+        idx2 = idx2.flip(1)
+        idxs_dm = torch.cdist(idx1.float(), idx2.float(), p=1.0)
+        mutual_idxs1 = idxs_dm.min(dim=1)[0] < 1e-8
+        mutual_idxs2 = idxs_dm.min(dim=0)[0] < 1e-8
+        good_idxs1 = idx1[mutual_idxs1.view(-1)]
+        good_idxs2 = idx2[mutual_idxs2.view(-1)]
+        dists1_good = dists1[mutual_idxs1.view(-1)]
+        dists2_good = dists2[mutual_idxs2.view(-1)]
+        _, idx_upl1 = torch.sort(good_idxs1[:, 0])
+        _, idx_upl2 = torch.sort(good_idxs2[:, 0])
+        good_idxs1 = good_idxs1[idx_upl1]
+        match_dists = torch.max(dists1_good[idx_upl1], dists2_good[idx_upl2])
+        matches_idxs = good_idxs1
+    else:
+        matches_idxs, match_dists = torch.empty(0, 2, device=desc1.device), torch.empty(0, 1, device=desc1.device)
+    return match_dists.view(-1, 1), matches_idxs.view(-1, 2)
+
 class LocalFeatureExtractor():
     '''Abstract method for local detector and or descriptor'''
     def __init__(self, **kwargs):
@@ -175,7 +236,7 @@ class SNNMMatcher():
         else:
             dev = torch.device('cpu')
 
-        dists, idxs = KF.match_smnn(torch.from_numpy(queryDescriptors).float().to(dev),
+        dists, idxs = match_smnn(torch.from_numpy(queryDescriptors).float().to(dev),
                                    torch.from_numpy(trainDescriptors).float().to(dev),
                                    self.th)
         good_matches = []
@@ -219,6 +280,9 @@ class TwoViewMatcher():
 
         kps2 = self.det.detect(img2, None)
         kps2, descs2 = self.desc.compute(img2, kps2)
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
