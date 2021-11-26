@@ -2,7 +2,7 @@
 
 Ready to use: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/farhadinima75/UAVPatches/blob/main/UAVPatches.ipynb)
 
-Just give two images and output will be something like:
+Just give two images and output will be something like: (For a high-resolution view, click on every image)
 
 
 ![OutAll_1](https://user-images.githubusercontent.com/64414275/143625483-46c03f72-c9aa-44a4-a754-39c6be8ccb2d.png)
