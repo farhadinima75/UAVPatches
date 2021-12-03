@@ -133,12 +133,35 @@ class GeometricVerifier():
 # Cell
 class SIFT(LocalFeatureExtractor):
     def __init__(self, **kwargs):
-        self.desc = cv2.SIFT_create(40000)
         '''In'''
         return
+
     def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        kps, descs  = self.desc.compute(image, keypoints)
-        return kps, descs
+        import kornia.feature as KF, torch, torch.nn.functional as F
+        from extract_patches.core import extract_patches
+
+        model = KF.SIFTDescriptor(32, rootsift=False)
+        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+
+        import torch
+        # dev = torch.device('cpu')
+        if torch.cuda.is_available():
+            dev = torch.device('cuda')
+        else:
+            dev = torch.device('cpu')
+        model = model.to(dev)
+        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)#.cuda()
+        torch_patches = torch_patches.unsqueeze(1)
+        for idx in range(torch_patches.shape[0]):
+          torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
+        out_desc = np.zeros((len(torch_patches), 128))
+        bs = 2048
+        for i in range(0, len(patches), bs):
+            data_a = torch_patches[i: i + bs, :, :, :]
+            with torch.no_grad():
+                out_a = model(data_a)
+            out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+        return keypoints, out_desc
 
 # Cell
 class HardNetDesc(LocalFeatureExtractor):
@@ -148,16 +171,15 @@ class HardNetDesc(LocalFeatureExtractor):
     def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
         import kornia.feature as KF, torch, torch.nn.functional as F
         from extract_patches.core import extract_patches
-        # model = KF.HardNet(True).eval()
-        # model = KF.HardNet(False).eval()
         if self.Model is not None:
           model = self.Model
         else:
           model = KF.HardNet(False).eval()
           model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 12.0)
+        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
 
         import torch
+        # dev = torch.device('cpu')
         if torch.cuda.is_available():
             dev = torch.device('cuda')
         else:
@@ -183,9 +205,8 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
     def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
         import kornia.feature as KF, torch, torch.nn.functional as F
         from extract_patches.core import extract_patches
-        # model = KF.HardNet(True).eval()
         model = self.Model
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 12.0)
+        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
 
         import torch
         # dev = torch.device('cpu')
@@ -194,7 +215,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         else:
             dev = torch.device('cpu')
         model = model.to(dev)
-        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)#.cuda()
+        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)
         torch_patches = torch_patches.unsqueeze(1)
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
@@ -281,9 +302,6 @@ class TwoViewMatcher():
         kps2 = self.det.detect(img2, None)
         kps2, descs2 = self.desc.compute(img2, kps2)
 
-        gc.collect()
-        torch.cuda.empty_cache()
-
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
@@ -300,6 +318,7 @@ class TwoViewMatcher():
                   'dists': dists[mask].detach().cpu().squeeze().numpy()}
         return result
 
+# Cell
 import pydegensac
 class degensac_Verifier(GeometricVerifier):
     def __init__(self, th = 0.5):
