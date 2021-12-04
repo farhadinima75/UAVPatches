@@ -1,6 +1,8 @@
 # UAVPatches
 
-Ready to use: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/farhadinima75/UAVPatches/blob/main/UAVPatches.ipynb)
+After accepting the paper, the dataset will be publicly available.
+
+But in the meanwhile pre-trained models are ready to use: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/farhadinima75/UAVPatches/blob/main/UAVPatches.ipynb)
 
 Just give two images and output will be something like: (For a high-resolution view, click on every image)
 
