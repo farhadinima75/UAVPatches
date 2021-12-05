@@ -10,7 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List, Tuple
 from tqdm.notebook import tqdm
-import numpy as np
+import numpy as np, time
 import torch
 import torchvision as tv
 import os
@@ -295,12 +295,13 @@ class TwoViewMatcher():
         else:
             img2 = img2_fname
 
-
+        T1 = time.time()
         kps1 = self.det.detect(img1, None)
         kps1, descs1 = self.desc.compute(img1,  kps1)
 
         kps2 = self.det.detect(img2, None)
         kps2, descs2 = self.desc.compute(img2, kps2)
+        T2 = time.time()
 
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
@@ -315,7 +316,8 @@ class TwoViewMatcher():
                   'match_kpts2': good_kpts2,
                   'F': F,
                   'num_inl': len(good_kpts1),
-                  'dists': dists[mask].detach().cpu().squeeze().numpy()}
+                  'dists': dists[mask].detach().cpu().squeeze().numpy(),
+                  'DescTime': T2 - T1}
         return result
 
 # Cell
