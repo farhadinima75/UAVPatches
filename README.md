@@ -4,17 +4,15 @@ After accepting the paper, the dataset will be publicly available.
 
 But in the meanwhile pre-trained models are ready to use: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/farhadinima75/UAVPatches/blob/main/UAVPatches.ipynb)
 
-Just give two images and output will be something like: (For a high-resolution view, click on every image)
+Just give two images and output will be something like: (For a high-resolution view, click on each image)
 
 
-![OutAll_1](https://user-images.githubusercontent.com/64414275/143625483-46c03f72-c9aa-44a4-a754-39c6be8ccb2d.png)
+![OutAll (4)](https://user-images.githubusercontent.com/64414275/144762066-6729338d-5c0b-4913-b500-18ba3de2d472.png)
 
-![OutAll_5](https://user-images.githubusercontent.com/64414275/143625792-f6fd627f-9ac7-41fd-b667-9ee2fb9832b1.png)
+![OutAll](https://user-images.githubusercontent.com/64414275/144762133-819407e7-de15-4fd3-9259-f62cdbb69faa.png)
 
-![OutAll_3](https://user-images.githubusercontent.com/64414275/143626020-e55e3ef5-228a-4735-aef9-94d2a5744ddb.png)
+![OutAll (3)](https://user-images.githubusercontent.com/64414275/144762194-0e386c0b-99a2-4a2e-9557-b1b0e74e976f.png)
 
-![OutAll_4](https://user-images.githubusercontent.com/64414275/143626411-5bb4a30d-1e5c-498f-9aea-8fce1b502988.png)
+![OutAll (2)](https://user-images.githubusercontent.com/64414275/144762249-b97086d7-b681-4266-9e73-c8a7e8dcfd3c.png)
 
-![OutAll_2](https://user-images.githubusercontent.com/64414275/143626823-5bec9ca1-091f-42b6-a372-009312a09041.png)
-
-![OutAll_6](https://user-images.githubusercontent.com/64414275/143626935-385acde2-c4d2-443e-953e-cff6190ed53c.png)
+![OutAll (1)](https://user-images.githubusercontent.com/64414275/144762253-38765d44-448a-48b8-85fd-e9acdafb6f76.png)
