@@ -312,7 +312,9 @@ class TwoViewMatcher():
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
-        result = {'match_kpts1': good_kpts1,
+        result = {'init_kpts1': kps1,
+                  'init_kpts2': kps2,
+                  'match_kpts1': good_kpts1,
                   'match_kpts2': good_kpts2,
                   'F': F,
                   'num_inl': len(good_kpts1),
