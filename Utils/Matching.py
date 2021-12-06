@@ -285,7 +285,7 @@ class TwoViewMatcher():
         self.matcher = matcher
         self.geom_verif = geom_verif
         return
-    def verify(self, img1_fname, img2_fname):
+    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None):
         if type(img1_fname) is str:
             img1 = cv2.cvtColor(cv2.imread(img1_fname), cv2.COLOR_BGR2RGB)
         else:
@@ -296,10 +296,12 @@ class TwoViewMatcher():
             img2 = img2_fname
 
         T1 = time.time()
-        kps1 = self.det.detect(img1, None)
+        if kps1 == None:
+          kps1 = self.det.detect(img1, None)
         kps1, descs1 = self.desc.compute(img1,  kps1)
 
-        kps2 = self.det.detect(img2, None)
+        if kps2 == None:
+          kps2 = self.det.detect(img2, None)
         kps2, descs2 = self.desc.compute(img2, kps2)
         T2 = time.time()
 
