@@ -295,13 +295,13 @@ class TwoViewMatcher():
         else:
             img2 = img2_fname
 
-        T1 = time.time()
         if kps1 == None:
           kps1 = self.det.detect(img1, None)
         kps1, descs1 = self.desc.compute(img1,  kps1)
 
         if kps2 == None:
           kps2 = self.det.detect(img2, None)
+        T1 = time.time()
         kps2, descs2 = self.desc.compute(img2, kps2)
         T2 = time.time()
 
