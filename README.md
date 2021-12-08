@@ -7,12 +7,15 @@ But in the meanwhile pre-trained models are ready to use: [![Open In Colab](http
 Just give two images and output will be something like: (For a high-resolution view, click on each image)
 
 
-![OutAll (4)](https://user-images.githubusercontent.com/64414275/144762066-6729338d-5c0b-4913-b500-18ba3de2d472.png)
+![OutAll (4)](https://user-images.githubusercontent.com/64414275/145178798-5240ed92-b1ec-49c4-8898-d75f690490ee.png)
 
-![OutAll](https://user-images.githubusercontent.com/64414275/144762133-819407e7-de15-4fd3-9259-f62cdbb69faa.png)
+![OutAll](https://user-images.githubusercontent.com/64414275/145178816-3afb077b-b9ff-479a-9a28-c4d8877d1acd.png)
 
-![OutAll (3)](https://user-images.githubusercontent.com/64414275/144762194-0e386c0b-99a2-4a2e-9557-b1b0e74e976f.png)
+![OutAll (3)](https://user-images.githubusercontent.com/64414275/145178846-39f84455-cbf8-4142-983b-16cbf2643f30.png)
 
-![OutAll (2)](https://user-images.githubusercontent.com/64414275/144762249-b97086d7-b681-4266-9e73-c8a7e8dcfd3c.png)
+![OutAll (2)](https://user-images.githubusercontent.com/64414275/145178879-75809765-e530-4f5e-8ef4-a3e7e1b228da.png)
 
-![OutAll (1)](https://user-images.githubusercontent.com/64414275/144762253-38765d44-448a-48b8-85fd-e9acdafb6f76.png)
+![OutAll (1)](https://user-images.githubusercontent.com/64414275/145178888-f5c43580-92a5-4afd-bc28-f8463f5f21f6.png)
+
+![OutAll (5)](https://user-images.githubusercontent.com/64414275/145178949-1068ea2b-3845-48a0-886f-d8e5c916f447.png)
+
