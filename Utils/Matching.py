@@ -321,7 +321,8 @@ class TwoViewMatcher():
                   'F': F,
                   'num_inl': len(good_kpts1),
                   'dists': dists[mask].detach().cpu().squeeze().numpy(),
-                  'DescTime': T2 - T1}
+                  'DescTime': T2 - T1,
+                  'TentativeMatches': tentative_matches}
         return result
 
 # Cell
