@@ -140,7 +140,7 @@ class SIFT(LocalFeatureExtractor):
 
     def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = KF.SIFTDescriptor(32, rootsift=False)
-        if os.path.isfile(ImagePath + '.pt'):
+        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
           torch_patches = torch.load(ImagePath + '.pt')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -175,7 +175,7 @@ class HardNetDesc(LocalFeatureExtractor):
         else:
           model = KF.HardNet(False).eval()
           model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        if os.path.isfile(ImagePath + '.pt'):
+        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
           torch_patches = torch.load(ImagePath + '.pt')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -205,7 +205,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         return
     def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = self.Model
-        if os.path.isfile(ImagePath + '.pt'):
+        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
           torch_patches = torch.load(ImagePath + '.pt')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -333,5 +333,5 @@ class degensac_Verifier(GeometricVerifier):
         self.th = th
         return
     def verify(self, srcPts:np.array, dstPts:np.array):
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=10)
         return F, mask
