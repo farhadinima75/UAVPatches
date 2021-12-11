@@ -333,5 +333,5 @@ class degensac_Verifier(GeometricVerifier):
         self.th = th
         return
     def verify(self, srcPts:np.array, dstPts:np.array):
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=10)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
         return F, mask
