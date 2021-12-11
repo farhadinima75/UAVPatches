@@ -36,6 +36,8 @@ import random
 import cv2
 import copy
 import PIL
+import kornia.feature as KF, torch, torch.nn.functional as F
+from extract_patches.core import extract_patches
 
 def match_snn(
     desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -136,27 +138,26 @@ class SIFT(LocalFeatureExtractor):
         '''In'''
         return
 
-    def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        import kornia.feature as KF, torch, torch.nn.functional as F
-        from extract_patches.core import extract_patches
-
+    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = KF.SIFTDescriptor(32, rootsift=False)
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+        if os.path.isfile(ImagePath + '.pt'):
+          torch_patches = torch.load(ImagePath + '.pt')
+        else:
+          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
 
-        import torch
         # dev = torch.device('cpu')
         if torch.cuda.is_available():
             dev = torch.device('cuda')
         else:
             dev = torch.device('cpu')
         model = model.to(dev)
-        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)#.cuda()
-        torch_patches = torch_patches.unsqueeze(1)
+        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
         bs = 2048
-        for i in range(0, len(patches), bs):
+        for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
                 out_a = model(data_a)
@@ -168,30 +169,30 @@ class HardNetDesc(LocalFeatureExtractor):
     def __init__(self, ModelT, **kwargs):
         self.Model = ModelT
         return
-    def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        import kornia.feature as KF, torch, torch.nn.functional as F
-        from extract_patches.core import extract_patches
+    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         if self.Model is not None:
           model = self.Model
         else:
           model = KF.HardNet(False).eval()
           model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+        if os.path.isfile(ImagePath + '.pt'):
+          torch_patches = torch.load(ImagePath + '.pt')
+        else:
+          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
 
-        import torch
         # dev = torch.device('cpu')
         if torch.cuda.is_available():
             dev = torch.device('cuda')
         else:
             dev = torch.device('cpu')
         model = model.to(dev)
-        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)#.cuda()
-        torch_patches = torch_patches.unsqueeze(1)
+        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
         bs = 2048
-        for i in range(0, len(patches), bs):
+        for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
                 out_a = model(data_a)
@@ -202,26 +203,26 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
     def __init__(self, ModelT, **kwargs):
         self.Model = ModelT
         return
-    def compute(self, image: np.array, keypoints = None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        import kornia.feature as KF, torch, torch.nn.functional as F
-        from extract_patches.core import extract_patches
+    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = self.Model
-        patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+        if os.path.isfile(ImagePath + '.pt'):
+          torch_patches = torch.load(ImagePath + '.pt')
+        else:
+          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
+          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
 
-        import torch
         # dev = torch.device('cpu')
         if torch.cuda.is_available():
             dev = torch.device('cuda')
         else:
             dev = torch.device('cpu')
         model = model.to(dev)
-        torch_patches = torch.from_numpy(np.stack(patches, axis=0)).float().to(dev)
-        torch_patches = torch_patches.unsqueeze(1)
+        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
         bs = 2048
-        for i in range(0, len(patches), bs):
+        for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
                 out_a = model(data_a)
@@ -297,12 +298,12 @@ class TwoViewMatcher():
 
         if kps1 == None:
           kps1 = self.det.detect(img1, None)
-        kps1, descs1 = self.desc.compute(img1,  kps1)
+        kps1, descs1 = self.desc.compute(img1,  kps1, img1_fname)
 
         if kps2 == None:
           kps2 = self.det.detect(img2, None)
         T1 = time.time()
-        kps2, descs2 = self.desc.compute(img2, kps2)
+        kps2, descs2 = self.desc.compute(img2, kps2, img2_fname)
         T2 = time.time()
 
         tentative_matches, dists = self.matcher.match(descs1, descs2)
