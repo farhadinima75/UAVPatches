@@ -156,7 +156,7 @@ class SIFT(LocalFeatureExtractor):
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
-        bs = 2048
+        bs = 1024
         for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
@@ -191,7 +191,7 @@ class HardNetDesc(LocalFeatureExtractor):
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
-        bs = 2048
+        bs = 1024
         for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
@@ -221,7 +221,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         for idx in range(torch_patches.shape[0]):
           torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
         out_desc = np.zeros((len(torch_patches), 128))
-        bs = 2048
+        bs = 1024
         for i in range(0, len(torch_patches), bs):
             data_a = torch_patches[i: i + bs, :, :, :]
             with torch.no_grad():
@@ -250,8 +250,6 @@ class SNNMMatcher():
         self.th = th
         return
     def match(self, queryDescriptors:np.array, trainDescriptors:np.array) -> List[cv2.DMatch]:
-        import kornia.feature as KF
-        import torch
         # dev = torch.device('cpu')
         if torch.cuda.is_available():
             dev = torch.device('cuda')
