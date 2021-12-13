@@ -138,7 +138,7 @@ class SIFT(LocalFeatureExtractor):
         '''In'''
         return
 
-    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
+    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = KF.SIFTDescriptor(32, rootsift=False)
         if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
           torch_patches = torch.load(ImagePath + '.pt')
@@ -169,7 +169,7 @@ class HardNetDesc(LocalFeatureExtractor):
     def __init__(self, ModelT, **kwargs):
         self.Model = ModelT
         return
-    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
+    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         if self.Model is not None:
           model = self.Model
         else:
@@ -203,7 +203,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
     def __init__(self, ModelT, **kwargs):
         self.Model = ModelT
         return
-    def compute(self, image: np.array, keypoints = None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
+    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = self.Model
         if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
           torch_patches = torch.load(ImagePath + '.pt')
@@ -285,11 +285,11 @@ class TwoViewMatcher():
         self.geom_verif = geom_verif
         return
     def verify(self, img1_fname, img2_fname, kps1=None, kps2=None):
-        if type(img1_fname) is str:
+        if type(img1_fname) is str and kps1 is None:
             img1 = cv2.cvtColor(cv2.imread(img1_fname), cv2.COLOR_BGR2RGB)
         else:
             img1 = img1_fname
-        if type(img2_fname) is str:
+        if type(img2_fname) is str and kps2 is None:
             img2 = cv2.cvtColor(cv2.imread(img2_fname), cv2.COLOR_BGR2RGB)
         else:
             img2 = img2_fname
