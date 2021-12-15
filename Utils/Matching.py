@@ -1,6 +1,6 @@
 # Based on https://github.com/ducha-aiki/local_feature_tutorial repo with some modification.
 
-__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'SIFT', 'HardNetDesc', 'SNNMatcher',
+__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'SIFT', 'ORB', 'HardNetDesc', 'SNNMatcher',
            'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier', 'UAVPatchesANDPlus']
 
 import cv2
@@ -163,6 +163,18 @@ class SIFT(LocalFeatureExtractor):
                 out_a = model(data_a)
             out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
         return keypoints, out_desc
+
+class ORB(LocalFeatureExtractor):
+    def __init__(self, **kwargs):
+        '''In'''
+        return
+
+    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        ORBObject = cv2.ORB_create(len(keypoints))
+        kp = ORBObject.detect(image, None)
+        kp, desc = ORBObject.compute(image, kp)
+        return kp, desc
 
 # Cell
 class HardNetDesc(LocalFeatureExtractor):
