@@ -140,28 +140,28 @@ class SIFT(LocalFeatureExtractor):
 
     def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = KF.SIFTDescriptor(32, rootsift=False)
-        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
-          torch_patches = torch.load(ImagePath + '.pt')
+        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+          out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
           torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-
-        # dev = torch.device('cpu')
-        if torch.cuda.is_available():
-            dev = torch.device('cuda')
-        else:
-            dev = torch.device('cpu')
-        model = model.to(dev)
-        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-        for idx in range(torch_patches.shape[0]):
-          torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-        out_desc = np.zeros((len(torch_patches), 128))
-        bs = 1024
-        for i in range(0, len(torch_patches), bs):
-            data_a = torch_patches[i: i + bs, :, :, :]
-            with torch.no_grad():
-                out_a = model(data_a)
-            out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+          # dev = torch.device('cpu')
+          if torch.cuda.is_available():
+              dev = torch.device('cuda')
+          else:
+              dev = torch.device('cpu')
+          model = model.to(dev)
+          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
+          for idx in range(torch_patches.shape[0]):
+            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
+          out_desc = np.zeros((len(torch_patches), 128))
+          bs = 1024
+          for i in range(0, len(torch_patches), bs):
+              data_a = torch_patches[i: i + bs, :, :, :]
+              with torch.no_grad():
+                  out_a = model(data_a)
+              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class ORB(LocalFeatureExtractor):
@@ -187,28 +187,28 @@ class HardNetDesc(LocalFeatureExtractor):
         else:
           model = KF.HardNet(False).eval()
           model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
-          torch_patches = torch.load(ImagePath + '.pt')
+        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+          out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
           torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-
-        # dev = torch.device('cpu')
-        if torch.cuda.is_available():
-            dev = torch.device('cuda')
-        else:
-            dev = torch.device('cpu')
-        model = model.to(dev)
-        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-        for idx in range(torch_patches.shape[0]):
-          torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-        out_desc = np.zeros((len(torch_patches), 128))
-        bs = 1024
-        for i in range(0, len(torch_patches), bs):
-            data_a = torch_patches[i: i + bs, :, :, :]
-            with torch.no_grad():
-                out_a = model(data_a)
-            out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+          # dev = torch.device('cpu')
+          if torch.cuda.is_available():
+              dev = torch.device('cuda')
+          else:
+              dev = torch.device('cpu')
+          model = model.to(dev)
+          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
+          for idx in range(torch_patches.shape[0]):
+            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
+          out_desc = np.zeros((len(torch_patches), 128))
+          bs = 1024
+          for i in range(0, len(torch_patches), bs):
+              data_a = torch_patches[i: i + bs, :, :, :]
+              with torch.no_grad():
+                  out_a = model(data_a)
+              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class UAVPatchesANDPlus(LocalFeatureExtractor):
@@ -217,28 +217,28 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         return
     def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = self.Model
-        if ImagePath is not None and os.path.isfile(ImagePath + '.pt'):
-          torch_patches = torch.load(ImagePath + '.pt')
+        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+          out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
           torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-
-        # dev = torch.device('cpu')
-        if torch.cuda.is_available():
-            dev = torch.device('cuda')
-        else:
-            dev = torch.device('cpu')
-        model = model.to(dev)
-        torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-        for idx in range(torch_patches.shape[0]):
-          torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-        out_desc = np.zeros((len(torch_patches), 128))
-        bs = 1024
-        for i in range(0, len(torch_patches), bs):
-            data_a = torch_patches[i: i + bs, :, :, :]
-            with torch.no_grad():
-                out_a = model(data_a)
-            out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+          # dev = torch.device('cpu')
+          if torch.cuda.is_available():
+              dev = torch.device('cuda')
+          else:
+              dev = torch.device('cpu')
+          model = model.to(dev)
+          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
+          for idx in range(torch_patches.shape[0]):
+            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
+          out_desc = np.zeros((len(torch_patches), 128))
+          bs = 1024
+          for i in range(0, len(torch_patches), bs):
+              data_a = torch_patches[i: i + bs, :, :, :]
+              with torch.no_grad():
+                  out_a = model(data_a)
+              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
+        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 # Cell
 class SNNMatcher():
