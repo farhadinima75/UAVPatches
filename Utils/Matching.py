@@ -161,7 +161,7 @@ class SIFT(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class ORB(LocalFeatureExtractor):
@@ -208,7 +208,7 @@ class HardNetDesc(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class UAVPatchesANDPlus(LocalFeatureExtractor):
@@ -238,7 +238,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-        if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 # Cell
 class SNNMatcher():
