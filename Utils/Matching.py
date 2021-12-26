@@ -100,6 +100,10 @@ def match_smnn(
         matches_idxs, match_dists = torch.empty(0, 2, device=desc1.device), torch.empty(0, 1, device=desc1.device)
     return match_dists.view(-1, 1), matches_idxs.view(-1, 2)
 
+def ReleaseMemory():
+  torch.cuda.empty_cache()
+  gc.collect()
+           
 class LocalFeatureExtractor():
     '''Abstract method for local detector and or descriptor'''
     def __init__(self, **kwargs):
@@ -309,13 +313,17 @@ class TwoViewMatcher():
         if kps1 == None:
           kps1 = self.det.detect(img1, None)
         kps1, descs1 = self.desc.compute(img1,  kps1, img1_fname)
+           
+        ReleaseMemory()
 
         if kps2 == None:
           kps2 = self.det.detect(img2, None)
         T1 = time.time()
         kps2, descs2 = self.desc.compute(img2, kps2, img2_fname)
         T2 = time.time()
-
+        
+        ReleaseMemory()
+           
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
