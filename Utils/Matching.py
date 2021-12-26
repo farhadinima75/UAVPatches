@@ -140,7 +140,7 @@ class SIFT(LocalFeatureExtractor):
 
     def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = KF.SIFTDescriptor(32, rootsift=False)
-        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+        if os.path.isfile(ImagePath + '.npy'):
           out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -161,7 +161,7 @@ class SIFT(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class ORB(LocalFeatureExtractor):
@@ -187,7 +187,7 @@ class HardNetDesc(LocalFeatureExtractor):
         else:
           model = KF.HardNet(False).eval()
           model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+        if os.path.isfile(ImagePath + '.npy'):
           out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -208,7 +208,7 @@ class HardNetDesc(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 
 class UAVPatchesANDPlus(LocalFeatureExtractor):
@@ -217,7 +217,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
         return
     def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
         model = self.Model
-        if ImagePath is not None and os.path.isfile(ImagePath + '.npy'):
+        if os.path.isfile(ImagePath + '.npy'):
           out_desc = np.load(ImagePath + '.npy')
         else:
           patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
@@ -238,7 +238,7 @@ class UAVPatchesANDPlus(LocalFeatureExtractor):
               with torch.no_grad():
                   out_a = model(data_a)
               out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-              if ImagePath is not None: np.save(ImagePath + '.npy', out_desc)
+              if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
         return keypoints, out_desc
 # Cell
 class SNNMatcher():
