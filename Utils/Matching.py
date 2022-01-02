@@ -39,25 +39,21 @@ import PIL
 import kornia.feature as KF, torch, torch.nn.functional as F
 from extract_patches.core import extract_patches
 
-def match_snn(
-    desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
-    
+def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
     if len(desc1.shape) != 2:
         raise AssertionError
     if len(desc2.shape) != 2:
         raise AssertionError
     if desc2.shape[0] < 2:
         raise AssertionError
-
-    if dm is None:
-        dm = torch.cdist(desc1, desc2)
-    else:
-        if not ((dm.size(0) == desc1.size(0)) and (dm.size(1) == desc2.size(0))):
-            raise AssertionError
-
-    vals, idxs_in_2 = torch.topk(dm, 2, dim=1, largest=False)
-    del dm
-    gc.collect()
+    valsList, idxs_in_2List = [], []
+    for Batch in range(0, len(desc1), 1000):
+      MiniDesc = desc1[Batch:Batch+1000]
+      dm = torch.cdist(MiniDesc, desc2)
+      vals, idxs_in_2 = torch.topk(dm, 2, dim=1, largest=False)
+      valsList.append(vals)
+      idxs_in_2List.append(idxs_in_2)
+    vals, idxs_in_2 = torch.cat(valsList), torch.cat(idxs_in_2List)
     ratio = vals[:, 0] / vals[:, 1]
     mask = ratio <= th
     match_dists = ratio[mask]
