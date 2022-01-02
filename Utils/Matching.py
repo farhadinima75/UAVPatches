@@ -47,8 +47,8 @@ def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: tor
     if desc2.shape[0] < 2:
         raise AssertionError
     valsList, idxs_in_2List = [], []
-    for Batch in range(0, len(desc1), 1000):
-      MiniDesc = desc1[Batch:Batch+1000]
+    for Batch in range(0, len(desc1), 10000):
+      MiniDesc = desc1[Batch:Batch+10000]
       dm = torch.cdist(MiniDesc, desc2)
       vals, idxs_in_2 = torch.topk(dm, 2, dim=1, largest=False)
       valsList.append(vals)
