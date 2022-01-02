@@ -53,6 +53,7 @@ def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: tor
       vals, idxs_in_2 = torch.topk(dm, 2, dim=1, largest=False)
       valsList.append(vals)
       idxs_in_2List.append(idxs_in_2)
+      dm, vals, idxs_in_2 = [], [], []
     vals, idxs_in_2 = torch.cat(valsList), torch.cat(idxs_in_2List)
     ratio = vals[:, 0] / vals[:, 1]
     mask = ratio <= th
