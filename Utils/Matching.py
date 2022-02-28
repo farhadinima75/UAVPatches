@@ -230,6 +230,7 @@ def CONTEXTDESC_CONTEXTDESC(num_features):
 
 def D2NET_D2NET(num_features):
     Feature = dict(num_features    = num_features,
+                   num_levels=4,     
                    detector_type   = FeatureDetectorTypes.D2NET, 
                    descriptor_type = FeatureDescriptorTypes.D2NET)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
@@ -243,7 +244,10 @@ def R2D2_R2D2(num_features):
                    detector_type   = FeatureDetectorTypes.R2D2, 
                    descriptor_type = FeatureDescriptorTypes.R2D2)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)  
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_detector.repeatability_thr = 0.8 #0.7 #default 
+    Feature._feature_detector.reliability_thr = 0.7 #default 
+    return Feature
 
 def KEYNET_KEYNET(num_features):
     Feature = dict(num_features    = num_features,
