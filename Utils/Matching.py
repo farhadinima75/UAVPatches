@@ -1,7 +1,9 @@
 # Based on https://github.com/ducha-aiki/local_feature_tutorial repo with some modification.
 
-__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'SIFT', 'ORB', 'HardNetDesc', 'SNNMatcher',
-           'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier', 'UAVPatchesANDPlus']
+__all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'SNNMatcher',
+           'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier',
+           'SIFT_SIFT', 'SIFT_HARDNET','SIFT_SOSNET', 'SIFT_L2NET','SIFT_ROOT_SIFT', 'SIFT_GEODESC', 'SIFT_TFEAT', 'SIFT_BROWN6',
+           'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET']
 
 import cv2
 import numpy as np
@@ -38,6 +40,11 @@ import copy
 import PIL
 import kornia.feature as KF, torch, torch.nn.functional as F
 from extract_patches.core import extract_patches
+
+from feature_types import FeatureDetectorTypes, FeatureDescriptorTypes
+from feature_manager import feature_manager_factory
+from feature_manager_configs import FeatureManagerConfigs
+
 
 def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
     if len(desc1.shape) != 2:
@@ -130,113 +137,122 @@ class GeometricVerifier():
         return F, mask
 
 # Cell
-class SIFT(LocalFeatureExtractor):
-    def __init__(self, **kwargs):
-        '''In'''
-        return
+def SIFT_SIFT(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.SIFT)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
 
-    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        model = KF.SIFTDescriptor(32, rootsift=False)
-        if os.path.isfile(ImagePath + '.npy'):
-          out_desc = np.load(ImagePath + '.npy')
-        else:
-          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
-          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-          # dev = torch.device('cpu')
-          if torch.cuda.is_available():
-              dev = torch.device('cuda')
-          else:
-              dev = torch.device('cpu')
-          model = model.to(dev)
-          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-          for idx in range(torch_patches.shape[0]):
-            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-          out_desc = np.zeros((len(torch_patches), 128))
-          bs = 1024
-          for i in range(0, len(torch_patches), bs):
-              data_a = torch_patches[i: i + bs, :, :, :]
-              with torch.no_grad():
-                  out_a = model(data_a)
-              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-          if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
-        return keypoints, out_desc
+def SIFT_AKAZE(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.AKAZE)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
 
-class ORB(LocalFeatureExtractor):
-    def __init__(self, **kwargs):
-        '''In'''
-        return
+def SIFT_ROOT_SIFT(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.ROOT_SIFT)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
 
-    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        ORBObject = cv2.ORB_create(len(keypoints))
-        kp = ORBObject.detect(image, None)
-        kp, desc = ORBObject.compute(image, kp)
-        return kp, desc
+def SIFT_FREAK(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.FREAK)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
 
-# Cell
-class HardNetDesc(LocalFeatureExtractor):
-    def __init__(self, ModelT, **kwargs):
-        self.Model = ModelT
-        return
-    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        if self.Model is not None:
-          model = self.Model
-        else:
-          model = KF.HardNet(False).eval()
-          model.load_state_dict(torch.load('/content/checkpoint_liberty_no_aug.pth', map_location=torch.device('cpu'))['state_dict'])
-        if os.path.isfile(ImagePath + '.npy'):
-          out_desc = np.load(ImagePath + '.npy')
-        else:
-          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
-          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-          # dev = torch.device('cpu')
-          if torch.cuda.is_available():
-              dev = torch.device('cuda')
-          else:
-              dev = torch.device('cpu')
-          model = model.to(dev)
-          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-          for idx in range(torch_patches.shape[0]):
-            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-          out_desc = np.zeros((len(torch_patches), 128))
-          bs = 1024
-          for i in range(0, len(torch_patches), bs):
-              data_a = torch_patches[i: i + bs, :, :, :]
-              with torch.no_grad():
-                  out_a = model(data_a)
-              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-          if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
-        return keypoints, out_desc
+def SIFT_HARDNET(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.HARDNET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
 
-class UAVPatchesANDPlus(LocalFeatureExtractor):
-    def __init__(self, ModelT, **kwargs):
-        self.Model = ModelT
-        return
-    def compute(self, image, keypoints=None, ImagePath=None) -> Tuple[List[cv2.KeyPoint], np.array]:
-        model = self.Model
-        if os.path.isfile(ImagePath + '.npy'):
-          out_desc = np.load(ImagePath + '.npy')
-        else:
-          patches = extract_patches(keypoints, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 32, 18.0)
-          torch_patches = torch.from_numpy(np.stack(patches, axis=0))
-          # dev = torch.device('cpu')
-          if torch.cuda.is_available():
-              dev = torch.device('cuda')
-          else:
-              dev = torch.device('cpu')
-          model = model.to(dev)
-          torch_patches = torch_patches.unsqueeze(1).float().to(dev)
-          for idx in range(torch_patches.shape[0]):
-            torch_patches[idx] = torch_patches[idx] / torch_patches[idx].max()
-          out_desc = np.zeros((len(torch_patches), 128))
-          bs = 1024
-          for i in range(0, len(torch_patches), bs):
-              data_a = torch_patches[i: i + bs, :, :, :]
-              with torch.no_grad():
-                  out_a = model(data_a)
-              out_desc[i: i + bs,:] = out_a.data.cpu().numpy().reshape(-1, 128)
-          if os.path.isfile(ImagePath + '.txt'): np.save(ImagePath + '.npy', out_desc)
-        return keypoints, out_desc
+def SIFT_L2NET(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.L2NET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
+
+def SIFT_SOSNET(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.SOSNET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)
+
+def SIFT_TFEAT(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.TFEAT)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature) 
+
+def SIFT_GEODESC(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.GEODESC)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def SIFT_UAVPatches(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.UAVPatches)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def SIFT_UAVPatchesPlus(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.UAVPatchesPlus)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)      
+
+def SIFT_BROWN6(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.BROWN6)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)      
+
+def CONTEXTDESC_CONTEXTDESC(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.CONTEXTDESC, 
+                   descriptor_type = FeatureDescriptorTypes.CONTEXTDESC)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def D2NET_D2NET(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.D2NET, 
+                   descriptor_type = FeatureDescriptorTypes.D2NET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_detector.max_edge = 3000
+    Feature._feature_detector.max_sum_edges = 6000 
+    return Feature
+
+def R2D2_R2D2(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.R2D2, 
+                   descriptor_type = FeatureDescriptorTypes.R2D2)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def KEYNET_KEYNET(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.KEYNET, 
+                   descriptor_type = FeatureDescriptorTypes.KEYNET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+
 # Cell
 class SNNMatcher():
     def __init__(self, th = 0.8):
@@ -284,12 +300,10 @@ class CV2_RANSACVerifier(GeometricVerifier):
 
 # Cell
 class TwoViewMatcher():
-    def __init__(self, detector:LocalFeatureExtractor = cv2.SIFT_create(8000),
-                       descriptor:LocalFeatureExtractor = cv2.SIFT_create(8000),
+    def __init__(self, detector_descriptor:LocalFeatureExtractor = cv2.SIFT_create(8000),
                        matcher: DescriptorMatcher = cv2.DescriptorMatcher_create(cv2.DescriptorMatcher_FLANNBASED),
                        geom_verif: GeometricVerifier = CV2_RANSACVerifier(0.5)):
-        self.det = detector
-        self.desc = descriptor
+        self.detector_descriptor = detector_descriptor
         self.matcher = matcher
         self.geom_verif = geom_verif
         return
@@ -304,13 +318,13 @@ class TwoViewMatcher():
             img2 = img2_fname
 
         if kps1 == None:
-          kps1 = self.det.detect(img1, None)
-        kps1, descs1 = self.desc.compute(img1,  kps1, img1_fname)
+          kps1 = self.detector_descriptor.detect(img1)
+        kps1, descs1 = self.detector_descriptor.compute(img1,  kps1)
 
         if kps2 == None:
-          kps2 = self.det.detect(img2, None)
+          kps2 = self.detector_descriptor.detect(img2)
         T1 = time.time()
-        kps2, descs2 = self.desc.compute(img2, kps2, img2_fname)
+        kps2, descs2 = self.detector_descriptor.compute(img2, kps2)
         T2 = time.time()
         
         tentative_matches, dists = self.matcher.match(descs1, descs2)
