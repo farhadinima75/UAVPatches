@@ -44,7 +44,7 @@ from extract_patches.core import extract_patches
 from feature_types import FeatureDetectorTypes, FeatureDescriptorTypes
 from feature_manager import feature_manager_factory
 from feature_manager_configs import FeatureManagerConfigs
-
+from utils_features import descriptor_sigma_mad, compute_hom_reprojection_error
 
 def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
     if len(desc1.shape) != 2:
@@ -170,7 +170,9 @@ def SIFT_HARDNET(num_features):
                    detector_type   = FeatureDetectorTypes.SIFT, 
                    descriptor_type = FeatureDescriptorTypes.HARDNET)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 18
+    return Feature 
 
 def SIFT_L2NET(num_features):
     Feature = dict(num_features    = num_features,
@@ -184,7 +186,9 @@ def SIFT_SOSNET(num_features):
                    detector_type   = FeatureDetectorTypes.SIFT, 
                    descriptor_type = FeatureDescriptorTypes.SOSNET)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 18
+    return Feature 
 
 def SIFT_TFEAT(num_features):
     Feature = dict(num_features    = num_features,
@@ -205,14 +209,18 @@ def SIFT_UAVPatches(num_features):
                    detector_type   = FeatureDetectorTypes.SIFT, 
                    descriptor_type = FeatureDescriptorTypes.UAVPatches)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)  
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 18
+    return Feature 
 
 def SIFT_UAVPatchesPlus(num_features):
     Feature = dict(num_features    = num_features,
                    detector_type   = FeatureDetectorTypes.SIFT, 
                    descriptor_type = FeatureDescriptorTypes.UAVPatchesPlus)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)      
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 18
+    return Feature     
 
 def SIFT_BROWN6(num_features):
     Feature = dict(num_features    = num_features,
@@ -236,7 +244,7 @@ def D2NET_D2NET(num_features):
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature) 
     Feature._feature_detector.max_edge = 3000
-    Feature._feature_detector.max_sum_edges = 6000 
+    Feature._feature_detector.max_sum_edges = 6000
     return Feature
 
 def R2D2_R2D2(num_features):
@@ -245,7 +253,7 @@ def R2D2_R2D2(num_features):
                    descriptor_type = FeatureDescriptorTypes.R2D2)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature) 
-    Feature._feature_detector.repeatability_thr = 0.8 #0.7 #default 
+    Feature._feature_detector.repeatability_thr = 0.7 #default 
     Feature._feature_detector.reliability_thr = 0.7 #default 
     return Feature
 
@@ -340,6 +348,12 @@ class TwoViewMatcher():
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
+
+        good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
+        H, maskH = cv2.findHomography(good_kpts1pt, good_kpts2pt, cv2.RANSAC)
+        SigmaMad, _ = descriptor_sigma_mad(descs1, descs2)
+        ReprojectError = compute_hom_reprojection_error(H, good_kpts1pt, good_kpts2pt, maskH)
+        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\nHemographic reprojection error: {ReprojectError:.4f}\033[0m')
         result = {'init_kpts1': kps1,
                   'init_kpts2': kps2,
                   'match_kpts1': good_kpts1,
@@ -358,6 +372,9 @@ class degensac_Verifier(GeometricVerifier):
     def __init__(self, th = 0.5):
         self.th = th
         return
-    def verify(self, srcPts:np.array, dstPts:np.array):
+    def verify(self, srcPts:np.array, dstPts:np.array, H=False):
+        if H:
+          H, mask = pydegensac.findHomography(dstPts, srcPts, 0.5, 0.999, max_iters=250000)
+          return H, mask
         F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
         return F, mask
