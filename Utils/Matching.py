@@ -4,7 +4,7 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier',
            'SIFT_SIFT', 'SIFT_HARDNET','SIFT_SOSNET', 'SIFT_L2NET','SIFT_ROOT_SIFT', 'SIFT_GEODESC', 'SIFT_TFEAT', 'SIFT_BROWN6',
            'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET', 'ORB2_ORB2',
-           'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET']
+           'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF']
 
 import cv2
 import numpy as np
@@ -46,6 +46,7 @@ from feature_types import FeatureDetectorTypes, FeatureDescriptorTypes
 from feature_manager import feature_manager_factory
 from feature_manager_configs import FeatureManagerConfigs
 from utils_features import descriptor_sigma_mad, compute_hom_reprojection_error
+from utils_img import rotate_img
 
 def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
     if len(desc1.shape) != 2:
@@ -175,6 +176,15 @@ def SIFT_HARDNET(num_features):
     Feature._feature_descriptor.mag_factor = 12
     return Feature 
 
+def SIFT_LOGPOLAR(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.LOGPOLAR)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature)
+    # Feature._feature_descriptor.mag_factor = 12
+    return Feature 
+
 def SIFT_L2NET(num_features):
     Feature = dict(num_features    = num_features,
                    detector_type   = FeatureDetectorTypes.SIFT, 
@@ -301,6 +311,32 @@ def ORB2_ORB2(num_features):
     Feature = FeatureManagerConfigs.extract_from(Feature)
     return feature_manager_factory(**Feature)  
 
+def DELF_DELF(num_features):
+    Feature = dict(num_features    = num_features, 
+                   detector_type   = FeatureDetectorTypes.DELF, 
+                   descriptor_type = FeatureDescriptorTypes.DELF)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def DISK_DISK(num_features):
+    Feature = dict(num_features    = num_features, 
+                   num_levels = 1,                                  
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.DISK, 
+                   descriptor_type = FeatureDescriptorTypes.DISK)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_detector.OutWidth = 16*200
+    Feature._feature_detector.OutHeight = 16*100
+    return Feature
+
+def MSER_HARDNET(num_features):
+    Feature = dict(num_features    = num_features, 
+                   detector_type   = FeatureDetectorTypes.MSER, 
+                   descriptor_type = FeatureDescriptorTypes.HARDNET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
 
 # Cell
 class SNNMatcher():
@@ -356,7 +392,7 @@ class TwoViewMatcher():
         self.matcher = matcher
         self.geom_verif = geom_verif
         return
-    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None):
+    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None, Rotate=0):
         if type(img1_fname) is str and kps1 is None:
             img1 = cv2.cvtColor(cv2.imread(img1_fname), cv2.COLOR_BGR2RGB)
         else:
@@ -365,6 +401,10 @@ class TwoViewMatcher():
             img2 = cv2.cvtColor(cv2.imread(img2_fname), cv2.COLOR_BGR2RGB)
         else:
             img2 = img2_fname
+        if Rotate > 0: 
+          SHAPE = img2.shape[:-1][::-1]
+          img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
+          img2 = cv2.resize(img2, SHAPE)
 
         if kps1 == None:
           kps1 = self.detector_descriptor.detect(img1)
