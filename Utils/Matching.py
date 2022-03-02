@@ -327,8 +327,8 @@ def DISK_DISK(num_features):
                    descriptor_type = FeatureDescriptorTypes.DISK)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature) 
-    Feature._feature_detector.OutWidth = 16*200
-    Feature._feature_detector.OutHeight = 16*100
+    Feature._feature_detector.OutWidth = 16*100
+    Feature._feature_detector.OutHeight = 16*120
     return Feature
 
 def MSER_HARDNET(num_features):
