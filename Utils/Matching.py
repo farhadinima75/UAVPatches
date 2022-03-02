@@ -4,7 +4,8 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SNNMMatcher', 'CV2_RANSACVerifier', 'TwoViewMatcher', 'degensac_Verifier',
            'SIFT_SIFT', 'SIFT_HARDNET','SIFT_SOSNET', 'SIFT_L2NET','SIFT_ROOT_SIFT', 'SIFT_GEODESC', 'SIFT_TFEAT', 'SIFT_BROWN6',
            'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET', 'ORB2_ORB2',
-           'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF']
+           'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF', 'SIFT_VGG',
+           'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK']
 
 import cv2
 import numpy as np
@@ -337,6 +338,33 @@ def MSER_HARDNET(num_features):
     Feature = FeatureManagerConfigs.extract_from(Feature)
     return feature_manager_factory(**Feature)  
 
+def SIFT_VGG(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.VGG)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def SIFT_DAISY(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.DAISY)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def SIFT_BOOST_DESC(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.BOOST_DESC)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
+
+def SIFT_LATCH(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.LATCH)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    return feature_manager_factory(**Feature)  
 
 # Cell
 class SNNMatcher():
@@ -431,15 +459,16 @@ class TwoViewMatcher():
 
         # good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
         # H, maskH = self.geom_verif.verify(good_kpts2pt, good_kpts1pt, H=True)
-        ReprojectError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
+        ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
                                                            np.float32([K.pt for K in good_kpts1]))
-        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\nHemographic reprojection error: {ReprojectError:.4f}\033[0m')
+        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\nHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
         
         result = {'init_kpts1': kps1,
                   'init_kpts2': kps2,
                   'match_kpts1': good_kpts1,
                   'match_kpts2': good_kpts2,
                   'H': H,
+                  'ReprojectionError': ReprojectionError,
                   'num_inl': len(good_kpts1),
                   'dists': dists[mask].detach().cpu().squeeze().numpy(),
                   'DescTime': T2 - T1,
