@@ -138,6 +138,6 @@ def draw_matches(kp1, kp2, img1, img2, path,  color=None,  figsize=(12,8), mask 
     plt.imshow(new_img)
     plt.title(title)
     plt.axis('off')
-    plt.savefig('%s.JPG'%path,bbox_inches='tight', dpi=200, quality=100)
+    plt.savefig('%s.JPG'%path,bbox_inches='tight', dpi=100, quality=90)
     plt.close()
     return 
