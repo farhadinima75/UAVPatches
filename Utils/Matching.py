@@ -5,7 +5,7 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SIFT_SIFT', 'SIFT_HARDNET','SIFT_SOSNET', 'SIFT_L2NET','SIFT_ROOT_SIFT', 'SIFT_GEODESC', 'SIFT_TFEAT', 'SIFT_BROWN6',
            'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET', 'ORB2_ORB2',
            'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF', 'SIFT_VGG',
-           'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK']
+           'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK', 'ORB2_UAVPatchesPlus', 'ORB2_UAVPatches', 'ORB2_BROWN6', 'ORB2_HARDNET']
 
 import cv2
 import numpy as np
@@ -327,8 +327,8 @@ def DISK_DISK(num_features):
                    descriptor_type = FeatureDescriptorTypes.DISK)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature) 
-    Feature._feature_detector.OutWidth = 16*100
-    Feature._feature_detector.OutHeight = 16*120
+    Feature._feature_detector.OutWidth = 16*400
+    Feature._feature_detector.OutHeight = 16*200
     return Feature
 
 def MSER_HARDNET(num_features):
@@ -365,6 +365,50 @@ def SIFT_LATCH(num_features):
                    descriptor_type = FeatureDescriptorTypes.LATCH)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     return feature_manager_factory(**Feature)  
+
+def ORB2_UAVPatchesPlus(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.UAVPatchesPlus)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
+
+def ORB2_UAVPatches(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.UAVPatches)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
+
+def ORB2_HARDNET(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.HARDNET)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
+
+def ORB2_BROWN6(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.BROWN6)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
 
 # Cell
 class SNNMatcher():
@@ -432,7 +476,7 @@ class TwoViewMatcher():
         if Rotate > 0: 
           SHAPE = img2.shape[:-1][::-1]
           img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
-          img2 = cv2.resize(img2, SHAPE)
+          # img2 = cv2.resize(img2, SHAPE)
 
         if kps1 == None:
           kps1 = self.detector_descriptor.detect(img1)
@@ -461,9 +505,14 @@ class TwoViewMatcher():
         # H, maskH = self.geom_verif.verify(good_kpts2pt, good_kpts1pt, H=True)
         ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
                                                            np.float32([K.pt for K in good_kpts1]))
-        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\nHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
+        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
+        print(f'\033[92mHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
+        print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
+        print(f'\033[92mInliers Ratio: {float(len(good_kpts1))/float(len(src_pts)):.4f}\033[0m')
+        print(f'\033[92mDescriptor Time: {T2 - T1:.2f}\033[0m')
         
-        result = {'init_kpts1': kps1,
+        result = {'img1': img1, 'img2': img2,
+                  'init_kpts1': kps1,
                   'init_kpts2': kps2,
                   'match_kpts1': good_kpts1,
                   'match_kpts2': good_kpts2,
