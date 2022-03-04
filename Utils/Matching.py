@@ -483,9 +483,9 @@ class TwoViewMatcher():
           kps1 = self.detector_descriptor.detect(img1)
         kps1, descs1 = self.detector_descriptor.compute(img1,  kps1)
 
+        T1 = time.time()
         if kps2 == None:
           kps2 = self.detector_descriptor.detect(img2)
-        T1 = time.time()
         kps2, descs2 = self.detector_descriptor.compute(img2, kps2)
         T2 = time.time()
         
@@ -521,7 +521,7 @@ class TwoViewMatcher():
                   'ReprojectionError': ReprojectionError,
                   'num_inl': len(good_kpts1),
                   'dists': dists[mask].detach().cpu().squeeze().numpy(),
-                  'DescTime': T2 - T1,
+                  'DetDescTime': T2 - T1,
                   'TentativeMatches': tentative_matches,
                   'InliersRatio': float(len(good_kpts1))/float(len(src_pts))}
         return result
