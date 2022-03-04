@@ -464,7 +464,7 @@ class TwoViewMatcher():
         self.matcher = matcher
         self.geom_verif = geom_verif
         return
-    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None, Rotate=0):
+    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None, Rotate=0, MaxSumImgSize=3000):
         if type(img1_fname) is str and kps1 is None:
             img1 = cv2.cvtColor(cv2.imread(img1_fname), cv2.COLOR_BGR2RGB)
         else:
@@ -474,9 +474,10 @@ class TwoViewMatcher():
         else:
             img2 = img2_fname
         if Rotate > 0: 
-          SHAPE = img2.shape[:-1][::-1]
           img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
-          # img2 = cv2.resize(img2, SHAPE)
+
+        while np.sum(img1.shape[:-1]) > MaxSumImgSize: img1 = cv2.resize(img1, (int(img1.shape[1]*0.5), int(img1.shape[0]*0.5)))
+        while np.sum(img2.shape[:-1]) > MaxSumImgSize: img2 = cv2.resize(img2, (int(img2.shape[1]*0.5), int(img2.shape[0]*0.5)))
 
         if kps1 == None:
           kps1 = self.detector_descriptor.detect(img1)
@@ -502,9 +503,9 @@ class TwoViewMatcher():
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
 
         # good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
-        # H, maskH = self.geom_verif.verify(good_kpts2pt, good_kpts1pt, H=True)
+        # H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
         ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
-                                                           np.float32([K.pt for K in good_kpts1]))
+                                                              np.float32([K.pt for K in good_kpts1]))
         print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
         print(f'\033[92mHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
         print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
