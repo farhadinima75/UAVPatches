@@ -223,7 +223,7 @@ def SIFT_UAVPatches(num_features):
                    descriptor_type = FeatureDescriptorTypes.UAVPatches)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature)
-    Feature._feature_descriptor.mag_factor = 18
+    Feature._feature_descriptor.mag_factor = 12
     return Feature 
 
 def SIFT_UAVPatchesPlus(num_features):
@@ -232,7 +232,7 @@ def SIFT_UAVPatchesPlus(num_features):
                    descriptor_type = FeatureDescriptorTypes.UAVPatchesPlus)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     Feature = feature_manager_factory(**Feature)
-    Feature._feature_descriptor.mag_factor = 18
+    Feature._feature_descriptor.mag_factor = 12
     return Feature     
 
 def SIFT_BROWN6(num_features):
@@ -240,7 +240,9 @@ def SIFT_BROWN6(num_features):
                    detector_type   = FeatureDetectorTypes.SIFT, 
                    descriptor_type = FeatureDescriptorTypes.BROWN6)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
-    return feature_manager_factory(**Feature)      
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 12
+    return Feature       
 
 def CONTEXTDESC_CONTEXTDESC(num_features):
     Feature = dict(num_features    = num_features,
