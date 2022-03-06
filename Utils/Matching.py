@@ -546,7 +546,7 @@ class degensac_Verifier(GeometricVerifier):
         return
     def verify(self, srcPts:np.array, dstPts:np.array, H=False):
         if H:
-          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.999, max_iters=4*250000)
+          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.999, max_iters=250000)
           return H, mask
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=4*250000)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
         return F, mask
