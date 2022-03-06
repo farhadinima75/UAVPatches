@@ -450,7 +450,7 @@ class SNNMMatcher():
         else:
             dev = torch.device('cpu')
 
-        dists, idxs = match_snn(torch.from_numpy(queryDescriptors).float().to(dev),
+        dists, idxs = match_smnn(torch.from_numpy(queryDescriptors).float().to(dev),
                                    torch.from_numpy(trainDescriptors).float().to(dev),
                                    self.th)
         good_matches = []
@@ -515,7 +515,7 @@ class TwoViewMatcher():
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
 
         # good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
-        # H, maskH = self.geom_verif.verify(good_kpts2pt, good_kpts1pt, H=True)
+        # H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
         ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
                                                               np.float32([K.pt for K in good_kpts1]))
         print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
@@ -546,7 +546,7 @@ class degensac_Verifier(GeometricVerifier):
         return
     def verify(self, srcPts:np.array, dstPts:np.array, H=False):
         if H:
-          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.999, max_iters=250000)
+          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.999, max_iters=4*250000)
           return H, mask
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=4*250000)
         return F, mask
