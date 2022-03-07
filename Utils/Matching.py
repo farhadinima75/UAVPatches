@@ -43,6 +43,8 @@ import copy
 import PIL
 import kornia.feature as KF, torch, torch.nn.functional as F
 from extract_patches.core import extract_patches
+from sklearn.metrics import precision_recall_curve, average_precision_score
+from matplotlib import pyplot as plt
 
 from feature_types import FeatureDetectorTypes, FeatureDescriptorTypes
 from feature_manager import feature_manager_factory
@@ -509,7 +511,7 @@ class TwoViewMatcher():
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
         dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentative_matches]).reshape(-1,2)
 
-        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=True)
+        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=False)
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
@@ -518,8 +520,14 @@ class TwoViewMatcher():
         # H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
         ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
                                                               np.float32([K.pt for K in good_kpts1]))
+
+        mask = np.array(mask)*1
+        dists = dists.detach().cpu().squeeze().numpy()  
+        Precision, Recall, Threshold = precision_recall_curve(mask, 1 - dists)
+        AveragePrecision = average_precision_score(mask, 1 - dists)
         print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
         print(f'\033[92mHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
+        print(f'\033[92mAverage Precision: {AveragePrecision*100:.4f}\033[0m')
         print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
         print(f'\033[92mInliers Ratio: {float(len(good_kpts1))/float(len(src_pts)):.4f}\033[0m')
         print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
@@ -531,8 +539,11 @@ class TwoViewMatcher():
                   'match_kpts2': good_kpts2,
                   'H': H,
                   'ReprojectionError': ReprojectionError,
+                  'AveragePrecision': AveragePrecision,
+                  'Precision': Precision,
+                  'Recall': Recall,
                   'num_inl': len(good_kpts1),
-                  'dists': dists[mask].detach().cpu().squeeze().numpy(),
+                  'dists': dists,
                   'DetDescTime': T2 - T1,
                   'TentativeMatches': tentative_matches,
                   'InliersRatio': float(len(good_kpts1))/float(len(src_pts))}
@@ -546,7 +557,7 @@ class degensac_Verifier(GeometricVerifier):
         return
     def verify(self, srcPts:np.array, dstPts:np.array, H=False):
         if H:
-          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.999, max_iters=250000)
+          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.9999, max_iters=250000)
           return H, mask
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.999, max_iters=250000)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.9999, max_iters=250000)
         return F, mask
