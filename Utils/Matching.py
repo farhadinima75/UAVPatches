@@ -511,7 +511,7 @@ class TwoViewMatcher():
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
         dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentative_matches]).reshape(-1,2)
 
-        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=False)
+        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=True)
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
