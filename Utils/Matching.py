@@ -50,7 +50,7 @@ from feature_types import FeatureDetectorTypes, FeatureDescriptorTypes
 from feature_manager import feature_manager_factory
 from feature_manager_configs import FeatureManagerConfigs
 from utils_features import descriptor_sigma_mad, compute_hom_reprojection_error
-from utils_img import rotate_img
+from utils_img import rotate_img, transform_img
 
 def match_snn(desc1: torch.Tensor, desc2: torch.Tensor, th: float = 0.8, dm: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
     if len(desc1.shape) != 2:
@@ -487,11 +487,13 @@ class TwoViewMatcher():
             img2 = cv2.cvtColor(cv2.imread(img2_fname), cv2.COLOR_BGR2RGB)
         else:
             img2 = img2_fname
-        if Rotate > 0: 
-          img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
 
         while np.sum(img1.shape[:-1]) > MaxSumImgSize: img1 = cv2.resize(img1, (int(img1.shape[1]*0.5), int(img1.shape[0]*0.5)))
-        while np.sum(img2.shape[:-1]) > MaxSumImgSize: img2 = cv2.resize(img2, (int(img2.shape[1]*0.5), int(img2.shape[0]*0.5)))
+        # while np.sum(img2.shape[:-1]) > MaxSumImgSize: img2 = cv2.resize(img2, (int(img2.shape[1]*0.5), int(img2.shape[0]*0.5)))
+
+        if Rotate > 0: 
+          # img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
+          img2, img2_box, H2 = transform_img(img1, rotx=20, roty=20, rotz=20, tx=1, ty=1, scale=1.2, adjust_frame=True)
 
         if kps1 == None:
           kps1 = self.detector_descriptor.detect(img1)
@@ -518,13 +520,12 @@ class TwoViewMatcher():
 
         # good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
         # H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
-        ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
-                                                              np.float32([K.pt for K in good_kpts1]))
+        ReprojectionError = compute_hom_reprojection_error(H2, np.float32([K.pt for K in good_kpts1]), 
+                                                               np.float32([K.pt for K in good_kpts2]))
 
-        mask = np.array(mask)*1
         dists = dists.detach().cpu().squeeze().numpy()  
-        Precision, Recall, Threshold = precision_recall_curve(mask, 1 - dists)
-        AveragePrecision = average_precision_score(mask, 1 - dists)
+        Precision, Recall, Threshold = precision_recall_curve(np.array(mask)*1, 1 - dists)
+        AveragePrecision = average_precision_score(np.array(mask)*1, 1 - dists)
         print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
         print(f'\033[92mHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
         print(f'\033[92mAverage Precision: {AveragePrecision*100:.4f}\033[0m')
@@ -543,7 +544,7 @@ class TwoViewMatcher():
                   'Precision': Precision,
                   'Recall': Recall,
                   'num_inl': len(good_kpts1),
-                  'dists': dists,
+                  'dists': dists[mask],
                   'DetDescTime': T2 - T1,
                   'TentativeMatches': tentative_matches,
                   'InliersRatio': float(len(good_kpts1))/float(len(src_pts))}
@@ -557,7 +558,7 @@ class degensac_Verifier(GeometricVerifier):
         return
     def verify(self, srcPts:np.array, dstPts:np.array, H=False):
         if H:
-          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.9999, max_iters=250000)
+          H, mask = pydegensac.findHomography(dstPts, srcPts, self.th, 0.9999999, max_iters=250000)
           return H, mask
-        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.9999, max_iters=250000)
+        F, mask = pydegensac.findFundamentalMatrix(srcPts, dstPts, self.th, 0.9999999, max_iters=250000)
         return F, mask
