@@ -8,7 +8,7 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK', 'ORB2_UAVPatchesPlus', 'ORB2_UAVPatches', 'ORB2_BROWN6', 'ORB2_HARDNET',
            'ORB2_SOSNET']
 
-import cv2
+import cv2, shutil
 import numpy as np
 import abc
 from copy import deepcopy
@@ -460,7 +460,6 @@ class SNNMMatcher():
             good_matches.append(cv2.DMatch(idx_q_t[0].item(), idx_q_t[1].item(), 0))
         return good_matches, dists
 
-# Cell
 class CV2_RANSACVerifier(GeometricVerifier):
     def __init__(self, th = 0.5):
         self.th = th
@@ -469,7 +468,16 @@ class CV2_RANSACVerifier(GeometricVerifier):
         F, mask = cv2.findFundamentalMat(srcPts, dstPts, cv2.RANSAC, self.th)
         return F, mask
 
-# Cell
+def WriteKeypoints(ImgPath, KeyPoints):
+  Descs = np.arange(0,128)
+  with open(ImgPath + '.txt', 'w') as F:
+    F.write('{:d} 128\n'.format(len(KeyPoints)))
+    for i, Key in enumerate(KeyPoints):
+      F.write('{:f} {:f} {:f} {:f}'.format(Key.pt[0], Key.pt[1], Key.size, Key.angle))
+      for D in Descs:
+        F.write(' {:d}'.format(D))
+      F.write('\n') 
+
 class TwoViewMatcher():
     def __init__(self, detector_descriptor:LocalFeatureExtractor = cv2.SIFT_create(8000),
                        matcher: DescriptorMatcher = cv2.DescriptorMatcher_create(cv2.DescriptorMatcher_FLANNBASED),
@@ -504,6 +512,9 @@ class TwoViewMatcher():
           kps2 = self.detector_descriptor.detect(img2)
         kps2, descs2 = self.detector_descriptor.compute(img2, kps2)
         T2 = time.time()
+
+        WriteKeypoints(img1_fname, kps1)
+        WriteKeypoints(img2_fname, kps2)
         
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
@@ -514,6 +525,27 @@ class TwoViewMatcher():
         dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentative_matches]).reshape(-1,2)
 
         H, mask = self.geom_verif.verify(src_pts, dst_pts, H=True)
+
+        with open(f"{img1_fname}.Colmap_Matches_1to2.txt", 'w') as F:
+          F.write('{} {}\n'.format(img1_fname.split('/')[-1], img2_fname.split('/')[-1]))
+          for J, M in enumerate(tentative_matches):
+            if mask[J]:
+              F.write('{} {}\n'.format(M.queryIdx, M.trainIdx))
+
+        os.system('colmap database_creator --database_path "{}".db'.format(img1_fname))
+        KeyPath = '/'.join(img1_fname.split('/')[:-1])
+        os.system('colmap feature_importer --database_path "{}".db --import_path "{}" --image_path "{}"'.format(img1_fname, KeyPath, KeyPath))
+        MatchesPath = f"{img1_fname}.Colmap_Matches_1to2.txt"
+        os.system('colmap matches_importer --database_path "{}".db --match_list_path "{}" --match_type inliers'.format(img1_fname, MatchesPath))
+        os.makedirs(os.path.join(KeyPath, 'SFM'), exist_ok=True)
+        os.system('colmap mapper --database_path "{}".db --image_path "{}" \
+                                 --output_path "{}" --Mapper.tri_ignore_two_view_tracks 0 \
+                                 --Mapper.filter_max_reproj_error 1 \
+                                 --Mapper.filter_min_tri_angle 1.5 \
+                                 --Mapper.init_min_num_inliers 15 \
+                                 --Mapper.init_min_tri_angle 0'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
+        O = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
+        if os.path.isdir(os.path.join(KeyPath, 'SFM')): shutil.rmtree(os.path.join(KeyPath, 'SFM'))
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
@@ -532,6 +564,11 @@ class TwoViewMatcher():
         print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
         print(f'\033[92mInliers Ratio: {float(len(good_kpts1))/float(len(src_pts)):.4f}\033[0m')
         print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
+        SFMReprojectionError = 0
+        for o in O:
+          if 'reprojection' in o or 'Points' in o: 
+            if 'reprojection' in o: SFMReprojectionError = float(o.split(' ')[-1][:-2])
+            print(f'\033[1m\033[96mColmap SFM {o}\033[0m')
         
         result = {'img1': img1, 'img2': img2,
                   'init_kpts1': kps1,
@@ -547,7 +584,8 @@ class TwoViewMatcher():
                   'dists': dists[mask],
                   'DetDescTime': T2 - T1,
                   'TentativeMatches': tentative_matches,
-                  'InliersRatio': float(len(good_kpts1))/float(len(src_pts))}
+                  'InliersRatio': float(len(good_kpts1))/float(len(src_pts)),
+                  'SFMReprojectionError': SFMReprojectionError}
         return result
 
 # Cell
