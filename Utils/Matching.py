@@ -488,12 +488,12 @@ class TwoViewMatcher():
         else:
             img2 = img2_fname
 
-        while np.sum(img1.shape[:-1]) > MaxSumImgSize: img1 = cv2.resize(img1, (int(img1.shape[1]*0.5), int(img1.shape[0]*0.5)))
-        # while np.sum(img2.shape[:-1]) > MaxSumImgSize: img2 = cv2.resize(img2, (int(img2.shape[1]*0.5), int(img2.shape[0]*0.5)))
-
         if Rotate > 0: 
-          # img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
-          img2, img2_box, H2 = transform_img(img1, rotx=20, roty=20, rotz=20, tx=1, ty=1, scale=1.2, adjust_frame=True)
+          img2, img2_box, M = rotate_img(img2, angle=Rotate, scale=1.0)  # rotation and scale    
+          # img2, img2_box, H2 = transform_img(img1, rotx=20, roty=20, rotz=20, tx=1, ty=1, scale=1.2, adjust_frame=True)
+
+        while np.sum(img1.shape[:-1]) > MaxSumImgSize: img1 = cv2.resize(img1, (int(img1.shape[1]*0.8), int(img1.shape[0]*0.8)))
+        while np.sum(img2.shape[:-1]) > MaxSumImgSize: img2 = cv2.resize(img2, (int(img2.shape[1]*0.8), int(img2.shape[0]*0.8)))
 
         if kps1 == None:
           kps1 = self.detector_descriptor.detect(img1)
@@ -518,10 +518,10 @@ class TwoViewMatcher():
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
 
-        # good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
-        # H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
-        ReprojectionError = compute_hom_reprojection_error(H2, np.float32([K.pt for K in good_kpts1]), 
-                                                               np.float32([K.pt for K in good_kpts2]))
+        good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
+        H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
+        ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
+                                                               np.float32([K.pt for K in good_kpts1]))
 
         dists = dists.detach().cpu().squeeze().numpy()  
         Precision, Recall, Threshold = precision_recall_curve(np.array(mask)*1, 1 - dists)
