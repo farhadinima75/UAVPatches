@@ -540,7 +540,7 @@ class TwoViewMatcher():
         os.makedirs(os.path.join(KeyPath, 'SFM'), exist_ok=True)
         os.system('colmap mapper --database_path "{}".db --image_path "{}" \
                                  --output_path "{}" --Mapper.tri_ignore_two_view_tracks 0 \
-                                 --Mapper.filter_max_reproj_error 1 \
+                                 --Mapper.filter_max_reproj_error 4 \
                                  --Mapper.filter_min_tri_angle 1.5 \
                                  --Mapper.init_min_num_inliers 15 \
                                  --Mapper.init_min_tri_angle 0'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
