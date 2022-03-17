@@ -553,10 +553,10 @@ class TwoViewMatcher():
                                  --Mapper.filter_max_reproj_error 4 \
                                  --Mapper.filter_min_tri_angle 1.5 \
                                  --Mapper.init_min_num_inliers 15 \
-                                 --Mapper.init_max_error 15 \
+                                 --Mapper.init_max_error 30 \
                                  --Mapper.init_max_forward_motion 0.99999999999999996 \
-                                 --Mapper.init_max_reg_trials 4 \
-                                 --Mapper.init_min_tri_angle 2'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
+                                 --Mapper.init_max_reg_trials 6 \
+                                 --Mapper.init_min_tri_angle 1'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
         O = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
         os.system('colmap point_filtering --input_path "{}" \
                                           --output_path "{}" \
