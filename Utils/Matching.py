@@ -545,6 +545,10 @@ class TwoViewMatcher():
                                  --Mapper.init_min_num_inliers 15 \
                                  --Mapper.init_min_tri_angle 0'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
         O = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
+        os.system('colmap point_filtering --input_path "{}" \
+                                          --output_path "{}" \
+                                          --max_reproj_error 0.25'.format(os.path.join(KeyPath, 'SFM/0'), os.path.join(KeyPath, 'SFM/0')))
+        O2 = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
         if os.path.isdir(os.path.join(KeyPath, 'SFM')): shutil.rmtree(os.path.join(KeyPath, 'SFM'))
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
@@ -564,11 +568,20 @@ class TwoViewMatcher():
         print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
         print(f'\033[92mInliers Ratio: {float(len(good_kpts1))/float(len(src_pts)):.4f}\033[0m')
         print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
-        SFMReprojectionError = 0
+        SFMReprojectionError, SFMReprojectionErrorBelow0_25, Points, PointsBelow0_25, C = 0, 0, 0, 0, 0
         for o in O:
           if 'reprojection' in o or 'Points' in o: 
             if 'reprojection' in o: SFMReprojectionError = float(o.split(' ')[-1][:-2])
+            if 'Points' in o: Points = int(o.split(' ')[-1])
             print(f'\033[1m\033[96mColmap SFM {o}\033[0m')
+            C+=1
+        for o in O2:
+          if 'reprojection' in o or 'Points' in o: 
+            if 'reprojection' in o: SFMReprojectionErrorBelow0_25 = float(o.split(' ')[-1][:-2])
+            if 'Points' in o: PointsBelow0_25 = int(o.split(' ')[-1])
+            print(f'\033[1m\033[96mColmap SFM (Below 0.25 pix Error) {o}\033[0m')
+            C+=1
+        if C == 0: print('\033[1m\033[96mColmap SFM Failed. Normally, increasing MaxSumImgSize or TotalKeyPoints will solve the problem.\033[0m')
         
         result = {'img1': img1, 'img2': img2,
                   'init_kpts1': kps1,
@@ -585,7 +598,10 @@ class TwoViewMatcher():
                   'DetDescTime': T2 - T1,
                   'TentativeMatches': tentative_matches,
                   'InliersRatio': float(len(good_kpts1))/float(len(src_pts)),
-                  'SFMReprojectionError': SFMReprojectionError}
+                  'SFMReprojectionError': SFMReprojectionError,
+                  'SFMReprojectionErrorBelow0_25': SFMReprojectionErrorBelow0_25,
+                  'Points': Points,
+                  'PointsBelow0_25': PointsBelow0_25}
         return result
 
 # Cell
