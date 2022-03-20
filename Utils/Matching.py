@@ -228,6 +228,24 @@ def SIFT_UAVPatches(num_features):
     Feature._feature_descriptor.mag_factor = 12
     return Feature 
 
+def SIFT_MKDDescriptor(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.MKDDescriptor)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 12
+    return Feature 
+
+def SIFT_HyNet(num_features):
+    Feature = dict(num_features    = num_features,
+                   detector_type   = FeatureDetectorTypes.SIFT, 
+                   descriptor_type = FeatureDescriptorTypes.HyNet)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature)
+    Feature._feature_descriptor.mag_factor = 12
+    return Feature 
+
 def SIFT_UAVPatchesPlus(num_features):
     Feature = dict(num_features    = num_features,
                    detector_type   = FeatureDetectorTypes.SIFT, 
@@ -368,6 +386,28 @@ def SIFT_LATCH(num_features):
                    descriptor_type = FeatureDescriptorTypes.LATCH)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     return feature_manager_factory(**Feature)  
+
+def ORB2_MKDDescriptor(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.MKDDescriptor)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
+
+def ORB2_HyNet(num_features):
+    Feature = dict(num_features    = num_features,
+                   num_levels = 8, 
+                   scale_factor = 1.2,   
+                   detector_type   = FeatureDetectorTypes.ORB2, 
+                   descriptor_type = FeatureDescriptorTypes.HyNet)  
+    Feature = FeatureManagerConfigs.extract_from(Feature)
+    Feature = feature_manager_factory(**Feature) 
+    Feature._feature_descriptor.mag_factor = 1
+    return Feature
 
 def ORB2_UAVPatchesPlus(num_features):
     Feature = dict(num_features    = num_features,
