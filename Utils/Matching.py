@@ -6,7 +6,7 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET', 'ORB2_ORB2',
            'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF', 'SIFT_VGG',
            'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK', 'ORB2_UAVPatchesPlus', 'ORB2_UAVPatches', 'ORB2_BROWN6', 'ORB2_HARDNET',
-           'ORB2_SOSNET', 'SIFT_MKDDescriptor', 'ORB2_MKDDescriptor', 'SIFT_HyNet', 'ORB2_HyNet']
+           'ORB2_SOSNET']
 
 import cv2, shutil
 import numpy as np
@@ -228,24 +228,6 @@ def SIFT_UAVPatches(num_features):
     Feature._feature_descriptor.mag_factor = 12
     return Feature 
 
-def SIFT_MKDDescriptor(num_features):
-    Feature = dict(num_features    = num_features,
-                   detector_type   = FeatureDetectorTypes.SIFT, 
-                   descriptor_type = FeatureDescriptorTypes.MKDDescriptor)  
-    Feature = FeatureManagerConfigs.extract_from(Feature)
-    Feature = feature_manager_factory(**Feature)
-    Feature._feature_descriptor.mag_factor = 12
-    return Feature 
-
-def SIFT_HyNet(num_features):
-    Feature = dict(num_features    = num_features,
-                   detector_type   = FeatureDetectorTypes.SIFT, 
-                   descriptor_type = FeatureDescriptorTypes.HyNet)  
-    Feature = FeatureManagerConfigs.extract_from(Feature)
-    Feature = feature_manager_factory(**Feature)
-    Feature._feature_descriptor.mag_factor = 12
-    return Feature 
-
 def SIFT_UAVPatchesPlus(num_features):
     Feature = dict(num_features    = num_features,
                    detector_type   = FeatureDetectorTypes.SIFT, 
@@ -386,28 +368,6 @@ def SIFT_LATCH(num_features):
                    descriptor_type = FeatureDescriptorTypes.LATCH)  
     Feature = FeatureManagerConfigs.extract_from(Feature)
     return feature_manager_factory(**Feature)  
-
-def ORB2_MKDDescriptor(num_features):
-    Feature = dict(num_features    = num_features,
-                   num_levels = 8, 
-                   scale_factor = 1.2,   
-                   detector_type   = FeatureDetectorTypes.ORB2, 
-                   descriptor_type = FeatureDescriptorTypes.MKDDescriptor)  
-    Feature = FeatureManagerConfigs.extract_from(Feature)
-    Feature = feature_manager_factory(**Feature) 
-    Feature._feature_descriptor.mag_factor = 1
-    return Feature
-
-def ORB2_HyNet(num_features):
-    Feature = dict(num_features    = num_features,
-                   num_levels = 8, 
-                   scale_factor = 1.2,   
-                   detector_type   = FeatureDetectorTypes.ORB2, 
-                   descriptor_type = FeatureDescriptorTypes.HyNet)  
-    Feature = FeatureManagerConfigs.extract_from(Feature)
-    Feature = feature_manager_factory(**Feature) 
-    Feature._feature_descriptor.mag_factor = 1
-    return Feature
 
 def ORB2_UAVPatchesPlus(num_features):
     Feature = dict(num_features    = num_features,
@@ -561,7 +521,7 @@ class TwoViewMatcher():
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
         dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentative_matches]).reshape(-1,2)
 
-        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=True)
+        H, mask = self.geom_verif.verify(src_pts, dst_pts, H=False)
 
         good_kpts1 = [ kps1[m.queryIdx] for i,m in enumerate(tentative_matches) if mask[i]]
         good_kpts2 = [ kps2[m.trainIdx] for i,m in enumerate(tentative_matches) if mask[i]]
