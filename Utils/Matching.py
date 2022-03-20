@@ -6,7 +6,7 @@ __all__ = ['LocalFeatureExtractor', 'DescriptorMatcher', 'GeometricVerifier', 'S
            'SIFT_UAVPatches', 'SIFT_UAVPatchesPlus','CONTEXTDESC_CONTEXTDESC', 'D2NET_D2NET','R2D2_R2D2', 'KEYNET_KEYNET', 'ORB2_ORB2',
            'AKAZE_AKAZE', 'SUPERPOINT_SUPERPOINT', 'LFNET_LFNET', 'SIFT_LOGPOLAR', 'MSER_HARDNET', 'DISK_DISK', 'DELF_DELF', 'SIFT_VGG',
            'SIFT_DAISY', 'SIFT_BOOST_DESC', 'SIFT_LATCH', 'SIFT_FREAK', 'ORB2_UAVPatchesPlus', 'ORB2_UAVPatches', 'ORB2_BROWN6', 'ORB2_HARDNET',
-           'ORB2_SOSNET']
+           'ORB2_SOSNET', 'SIFT_MKDDescriptor', 'ORB2_MKDDescriptor', 'SIFT_HyNet', 'ORB2_HyNet']
 
 import cv2, shutil
 import numpy as np
