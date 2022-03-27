@@ -7,15 +7,12 @@ But in the meanwhile pre-trained models are ready to use: [![Open In Colab](http
 Just give two images and output will be something like: (For a high-resolution view, click on each image)
 
 
-![OutAll (4)](https://user-images.githubusercontent.com/64414275/145178798-5240ed92-b1ec-49c4-8898-d75f690490ee.png)
 
-![OutAll](https://user-images.githubusercontent.com/64414275/145178816-3afb077b-b9ff-479a-9a28-c4d8877d1acd.png)
+![OutAll_Rot0](https://user-images.githubusercontent.com/64414275/160293971-634e02bd-91c3-4fd7-a9cd-a9498d26ca27.jpg)
+![OutAll_Rot50](https://user-images.githubusercontent.com/64414275/160294088-2004ca3a-eca1-4ad9-bbf4-954797d5034f.jpg)
 
-![OutAll (3)](https://user-images.githubusercontent.com/64414275/145178846-39f84455-cbf8-4142-983b-16cbf2643f30.png)
 
-![OutAll (2)](https://user-images.githubusercontent.com/64414275/145178879-75809765-e530-4f5e-8ef4-a3e7e1b228da.png)
 
-![OutAll (1)](https://user-images.githubusercontent.com/64414275/145178888-f5c43580-92a5-4afd-bc28-f8463f5f21f6.png)
-
-![OutAll (5)](https://user-images.githubusercontent.com/64414275/145178949-1068ea2b-3845-48a0-886f-d8e5c916f447.png)
+![OutAll_Rot0_2](https://user-images.githubusercontent.com/64414275/160294091-e31404fc-ad12-4f85-901e-0c588d2f88ac.jpg)
+![OutAll_Rot50_2](https://user-images.githubusercontent.com/64414275/160294095-bb279a1d-3742-4e69-a8aa-baeee156cadb.jpg)
 
