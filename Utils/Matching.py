@@ -555,9 +555,6 @@ class TwoViewMatcher():
         
         tentative_matches, dists = self.matcher.match(descs1, descs2)
 
-        minDim = np.min([descs1.shape[0], descs2.shape[0]])
-        SigmaMad, _ = descriptor_sigma_mad(descs1[:minDim], descs2[:minDim])
-
         src_pts = np.float32([ kps1[m.queryIdx].pt for m in tentative_matches]).reshape(-1,2)
         dst_pts = np.float32([ kps2[m.trainIdx].pt for m in tentative_matches]).reshape(-1,2)
 
@@ -568,12 +565,8 @@ class TwoViewMatcher():
 
         good_kpts1pt, good_kpts2pt = np.float32([K.pt for K in good_kpts1]), np.float32([K.pt for K in good_kpts2])
         H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
-        ReprojectionError = compute_hom_reprojection_error(H, np.float32([K.pt for K in good_kpts2]), 
-                                                               np.float32([K.pt for K in good_kpts1]))
 
         dists = dists.detach().cpu().squeeze().numpy()  
-        Precision, Recall, Threshold = precision_recall_curve(np.array(mask)*1, 1 - dists)
-        AveragePrecision = average_precision_score(np.array(mask)*1, 1 - dists)
 
         WriteKeypoints(img1_fname, kps1)
         WriteKeypoints(img2_fname, kps2)
@@ -604,11 +597,7 @@ class TwoViewMatcher():
         O2 = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
         if os.path.isdir(os.path.join(KeyPath, 'SFM')): shutil.rmtree(os.path.join(KeyPath, 'SFM'))
 
-        print(f'\033[92m3 x sigma-MAD of descriptor distances: {3*SigmaMad:.4f}\033[0m')
-        print(f'\033[92mHemographic reprojection error: {ReprojectionError:.4f}\033[0m')
-        print(f'\033[92mAverage Precision: {AveragePrecision*100:.4f}\033[0m')
         print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
-        print(f'\033[92mInliers Ratio: {float(len(good_kpts1))/float(len(src_pts)):.4f}\033[0m')
         print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
         SFMReprojectionError, SFMReprojectionErrorBelow0_25, Points, PointsBelow0_25, C = 0, 0, 0, 0, 0
         for o in O:
@@ -631,10 +620,6 @@ class TwoViewMatcher():
                   'match_kpts1': good_kpts1,
                   'match_kpts2': good_kpts2,
                   'H': H,
-                  'ReprojectionError': ReprojectionError,
-                  'AveragePrecision': AveragePrecision,
-                  'Precision': Precision,
-                  'Recall': Recall,
                   'num_inl': len(good_kpts1),
                   'dists': dists[mask],
                   'DetDescTime': T2 - T1,
