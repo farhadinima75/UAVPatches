@@ -13,11 +13,6 @@ Just give two images and output will be something like: (For a high-resolution v
 
 
 
-
-
-
-
-
 ![OutAll_Rot0_2](https://user-images.githubusercontent.com/64414275/160294091-e31404fc-ad12-4f85-901e-0c588d2f88ac.jpg)
 ![OutAll_Rot50_2](https://user-images.githubusercontent.com/64414275/160294095-bb279a1d-3742-4e69-a8aa-baeee156cadb.jpg)
 
