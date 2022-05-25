@@ -526,7 +526,7 @@ class TwoViewMatcher():
         self.matcher = matcher
         self.geom_verif = geom_verif
         return
-    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None, Rotate=0, MaxSumImgSize=3000):
+    def verify(self, img1_fname, img2_fname, kps1=None, kps2=None, Rotate=0, MaxSumImgSize=3000, SFM=True):
         if type(img1_fname) is str and kps1 is None:
             img1 = cv2.cvtColor(cv2.imread(img1_fname), cv2.COLOR_BGR2RGB)
         else:
@@ -567,52 +567,52 @@ class TwoViewMatcher():
         H, maskH = self.geom_verif.verify(good_kpts1pt, good_kpts2pt, H=True)
 
         dists = dists.detach().cpu().squeeze().numpy()  
-
-        WriteKeypoints(img1_fname, kps1)
-        WriteKeypoints(img2_fname, kps2)
-        with open(f"{img1_fname}.Colmap_Matches_1to2.txt", 'w') as F:
-          F.write('{} {}\n'.format(img1_fname.split('/')[-1], img2_fname.split('/')[-1]))
-          for J, M in enumerate(tentative_matches):
-            if mask[J]:
-              F.write('{} {}\n'.format(M.queryIdx, M.trainIdx))
-        os.system('colmap database_creator --database_path "{}".db'.format(img1_fname))
-        KeyPath = '/'.join(img1_fname.split('/')[:-1])
-        os.system('colmap feature_importer --database_path "{}".db --import_path "{}" --image_path "{}"'.format(img1_fname, KeyPath, KeyPath))
-        MatchesPath = f"{img1_fname}.Colmap_Matches_1to2.txt"
-        os.system('colmap matches_importer --database_path "{}".db --match_list_path "{}" --match_type inliers'.format(img1_fname, MatchesPath))
-        os.makedirs(os.path.join(KeyPath, 'SFM'), exist_ok=True)
-        os.system('colmap mapper --database_path "{}".db --image_path "{}" \
-                                 --output_path "{}" --Mapper.tri_ignore_two_view_tracks 0 \
-                                 --Mapper.filter_max_reproj_error 4 \
-                                 --Mapper.filter_min_tri_angle 1.5 \
-                                 --Mapper.init_min_num_inliers 15 \
-                                 --Mapper.init_max_error 30 \
-                                 --Mapper.init_max_forward_motion 0.99999999999999996 \
-                                 --Mapper.init_max_reg_trials 6 \
-                                 --Mapper.init_min_tri_angle 1'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
-        O = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
-        os.system('colmap point_filtering --input_path "{}" \
-                                          --output_path "{}" \
-                                          --max_reproj_error 0.25'.format(os.path.join(KeyPath, 'SFM/0'), os.path.join(KeyPath, 'SFM/0')))
-        O2 = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
-        if os.path.isdir(os.path.join(KeyPath, 'SFM')): shutil.rmtree(os.path.join(KeyPath, 'SFM'))
-
-        print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
-        print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
         SFMReprojectionError, SFMReprojectionErrorBelow0_25, Points, PointsBelow0_25, C = 0, 0, 0, 0, 0
-        for o in O:
-          if 'reprojection' in o or 'Points' in o: 
-            if 'reprojection' in o: SFMReprojectionError = float(o.split(' ')[-1][:-2])
-            if 'Points' in o: Points = int(o.split(' ')[-1])
-            print(f'\033[1m\033[96mColmap SFM {o}\033[0m')
-            C+=1
-        for o in O2:
-          if 'reprojection' in o or 'Points' in o: 
-            if 'reprojection' in o: SFMReprojectionErrorBelow0_25 = float(o.split(' ')[-1][:-2])
-            if 'Points' in o: PointsBelow0_25 = int(o.split(' ')[-1])
-            print(f'\033[1m\033[96mColmap SFM (Below 0.25 pix Error) {o}\033[0m')
-            C+=1
-        if C == 0: print('\033[1m\033[96mColmap SFM Failed. Normally, increasing MaxSumImgSize or TotalKeyPoints will solve the problem.\033[0m')
+        if SFM:
+          WriteKeypoints(img1_fname, kps1)
+          WriteKeypoints(img2_fname, kps2)
+          with open(f"{img1_fname}.Colmap_Matches_1to2.txt", 'w') as F:
+            F.write('{} {}\n'.format(img1_fname.split('/')[-1], img2_fname.split('/')[-1]))
+            for J, M in enumerate(tentative_matches):
+              if mask[J]:
+                F.write('{} {}\n'.format(M.queryIdx, M.trainIdx))
+          os.system('colmap database_creator --database_path "{}".db'.format(img1_fname))
+          KeyPath = '/'.join(img1_fname.split('/')[:-1])
+          os.system('colmap feature_importer --database_path "{}".db --import_path "{}" --image_path "{}"'.format(img1_fname, KeyPath, KeyPath))
+          MatchesPath = f"{img1_fname}.Colmap_Matches_1to2.txt"
+          os.system('colmap matches_importer --database_path "{}".db --match_list_path "{}" --match_type inliers'.format(img1_fname, MatchesPath))
+          os.makedirs(os.path.join(KeyPath, 'SFM'), exist_ok=True)
+          os.system('colmap mapper --database_path "{}".db --image_path "{}" \
+                                  --output_path "{}" --Mapper.tri_ignore_two_view_tracks 0 \
+                                  --Mapper.filter_max_reproj_error 4 \
+                                  --Mapper.filter_min_tri_angle 1.5 \
+                                  --Mapper.init_min_num_inliers 15 \
+                                  --Mapper.init_max_error 30 \
+                                  --Mapper.init_max_forward_motion 0.99999999999999996 \
+                                  --Mapper.init_max_reg_trials 6 \
+                                  --Mapper.init_min_tri_angle 1'.format(img1_fname, KeyPath, os.path.join(KeyPath, 'SFM')))
+          O = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
+          os.system('colmap point_filtering --input_path "{}" \
+                                            --output_path "{}" \
+                                            --max_reproj_error 0.25'.format(os.path.join(KeyPath, 'SFM/0'), os.path.join(KeyPath, 'SFM/0')))
+          O2 = os.popen('colmap model_analyzer --path "{}"'.format(os.path.join(KeyPath, 'SFM/0'))).read().split('\n')
+          if os.path.isdir(os.path.join(KeyPath, 'SFM')): shutil.rmtree(os.path.join(KeyPath, 'SFM'))
+
+          print(f'\033[92mFinal Matches: {len(good_kpts1)}\033[0m')
+          print(f'\033[92mDetector and Descriptor Time: {T2 - T1:.2f}\033[0m')
+          for o in O:
+            if 'reprojection' in o or 'Points' in o: 
+              if 'reprojection' in o: SFMReprojectionError = float(o.split(' ')[-1][:-2])
+              if 'Points' in o: Points = int(o.split(' ')[-1])
+              print(f'\033[1m\033[96mColmap SFM {o}\033[0m')
+              C+=1
+          for o in O2:
+            if 'reprojection' in o or 'Points' in o: 
+              if 'reprojection' in o: SFMReprojectionErrorBelow0_25 = float(o.split(' ')[-1][:-2])
+              if 'Points' in o: PointsBelow0_25 = int(o.split(' ')[-1])
+              print(f'\033[1m\033[96mColmap SFM (Below 0.25 pix Error) {o}\033[0m')
+              C+=1
+          if C == 0: print('\033[1m\033[96mColmap SFM Failed. Normally, increasing MaxSumImgSize or TotalKeyPoints will solve the problem.\033[0m')
         
         result = {'img1': img1, 'img2': img2,
                   'init_kpts1': kps1,
